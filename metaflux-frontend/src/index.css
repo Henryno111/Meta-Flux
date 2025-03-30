@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #0e2a40;
+  background-color: #ffffff;
+  
+  --color-primary: #0e2a40;
+  --color-secondary: #6b7d92;
+  --color-light-gray: #f5f5f5;
+  --color-lightest-gray: #e1e1e1;
+  --color-medium-gray: #b2b2b2;
+  --color-alt-gray: #a9b4c2;
+  --color-stroke-color: #e3ecf2;
+  --color-body-text: #1c3a57;
+  --color-light-blue: #028eca;
+  --color-light-red: #ff5347;
+  --color-body-light: #FFFFFF;
+}
+
+a {
+  font-weight: 400;
+  text-decoration: none;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Add a simple grid pattern SVG for the background */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-lightest-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-medium-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Utility classes */
+.bg-gradient-primary {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(to right, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
