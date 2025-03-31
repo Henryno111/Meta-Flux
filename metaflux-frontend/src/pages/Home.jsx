@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useWallet } from '../hooks/useWallet';
 import FeatureCard from '../components/FeatureCard';
 import StepCard from '../components/StepCard';
 import Navbar from '../components/Navbar';
@@ -15,21 +16,28 @@ import FAQItem from '../components/FAQItem';
 import IntegrationLogo from '../components/IntegrationLogo';
 
 const Home = () => {
-
-
   const navigate = useNavigate();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { isPending, isConnected, connect } = useWallet();
   const rewardsRef = useRef(null);
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
   const connectWallet = async () => {
-    setIsConnecting(true);
-    // This would be replaced with actual Metamask integration
-    setTimeout(() => {
-      setIsConnecting(false);
+    if (!isConnected) {
+      try {
+        await connect();
+        // Only navigate if connection was successful
+        // In a real app, you might want to check isConnected again after connect()
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      } catch (error) {
+        console.error("Failed to connect wallet:", error);
+      }
+    } else {
+      // If already connected, just navigate
       navigate('/dashboard');
-    }, 1500);
+    }
   };
 
   const scrollToRewards = () => {
@@ -232,12 +240,12 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <motion.button
               onClick={connectWallet}
-              disabled={isConnecting}
+              disabled={isPending}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
             >
-              {isConnecting ? (
+              {isPending ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -251,7 +259,7 @@ const Home = () => {
                     <path d="M22 6V8.42C22 10 21 11 19.42 11H16V4.01C16 2.9 16.91 2 18.02 2C19.11 2.01 20.11 2.45 20.83 3.17C21.55 3.9 22 4.9 22 6Z" fill="currentColor"/>
                     <path d="M2 7V21C2 21.83 2.94 22.3 3.6 21.8L5.31 20.52C5.71 20.22 6.27 20.26 6.63 20.62L8.29 22.29C8.68 22.68 9.32 22.68 9.71 22.29L11.39 20.61C11.74 20.26 12.3 20.22 12.69 20.52L14.4 21.8C15.06 22.29 16 21.82 16 21V4C16 2.9 16.9 2 18 2H7H6C3 2 2 3.79 2 6V7Z" fill="currentColor"/>
                   </svg>
-                  <span>Connect Wallet</span>
+                  <span>{isConnected ? 'Dashboard' : 'Connect Wallet'}</span>
                 </>
               )}
             </motion.button>
@@ -566,169 +574,182 @@ const Home = () => {
           </motion.div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <TestimonialCard 
-                key={testimonial.id}
-                testimonial={testimonial}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+{testimonials.map((testimonial, index) => (
+  <TestimonialCard 
+    key={testimonial.id}
+    testimonial={testimonial}
+    index={index}
+  />
+))}
+</div>
+</div>
+</section>
 
-      {/* Integrations Section */}
-      <section className="relative z-10 py-20 bg-black/60 backdrop-blur-md">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Seamless Integrations</h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">Connect with your favorite tools and services</p>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8">
-            {integrations.map((integration, index) => (
-              <IntegrationLogo 
-                key={index}
-                integration={integration}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+{/* Integrations Section */}
+<section className="relative z-10 py-20 bg-black/60 backdrop-blur-md">
+<div className="container mx-auto px-4">
+<motion.div 
+initial={{ opacity: 0 }}
+whileInView={{ opacity: 1 }}
+transition={{ duration: 0.5 }}
+className="text-center mb-16"
+>
+<h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Seamless Integrations</h2>
+<p className="text-gray-300 max-w-2xl mx-auto">Connect with your favorite tools and services</p>
+</motion.div>
 
-      {/* Comparison Table Section */}
-      <section className="relative z-10 py-20 bg-gradient-to-b from-gray-900/80 to-black/80 backdrop-blur-md">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Why Choose MetaFlux</h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">See how we compare to traditional expense management solutions</p>
-          </motion.div>
-          
-          <ComparisonTable />
-        </div>
-      </section>
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8">
+{integrations.map((integration, index) => (
+  <IntegrationLogo 
+    key={index}
+    integration={integration}
+    index={index}
+  />
+))}
+</div>
+</div>
+</section>
 
-      {/* FAQ Section */}
-      <section className="relative z-10 py-20 bg-black/60 backdrop-blur-md">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Frequently Asked Questions</h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">Everything you need to know about MetaFlux</p>
-          </motion.div>
-          
-          <div className="max-w-3xl mx-auto divide-y divide-gray-800">
-            {faqs.map((faq, index) => (
-              <FAQItem 
-                key={index}
-                faq={faq}
-                index={index}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+{/* Comparison Table Section */}
+<section className="relative z-10 py-20 bg-gradient-to-b from-gray-900/80 to-black/80 backdrop-blur-md">
+<div className="container mx-auto px-4">
+<motion.div 
+initial={{ opacity: 0 }}
+whileInView={{ opacity: 1 }}
+transition={{ duration: 0.5 }}
+className="text-center mb-16"
+>
+<h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Why Choose MetaFlux</h2>
+<p className="text-gray-300 max-w-2xl mx-auto">See how we compare to traditional expense management solutions</p>
+</motion.div>
 
-      {/* CTA Section */}
-      <section className="relative z-10 py-20 bg-gradient-to-b from-gray-900/80 to-black/80 backdrop-blur-md overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        
-        <div className="container mx-auto px-4 max-w-5xl">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-gradient-to-r from-gray-900/90 to-black/90 backdrop-blur-xl border border-gray-800/50 rounded-3xl overflow-hidden shadow-2xl"
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
-              <div className="p-8 md:p-12">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Ready to Transform Your Expense Management?</h2>
-                <p className="text-gray-300 mb-8">
-                  Join thousands of individuals and businesses who trust MetaFlux for their crypto expense tracking, budgeting, and rewards.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <motion.button
-                    onClick={connectWallet}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22 6V8.42C22 10 21 11 19.42 11H16V4.01C16 2.9 16.91 2 18.02 2C19.11 2.01 20.11 2.45 20.83 3.17C21.55 3.9 22 4.9 22 6Z" fill="currentColor"/>
-                      <path d="M2 7V21C2 21.83 2.94 22.3 3.6 21.8L5.31 20.52C5.71 20.22 6.27 20.26 6.63 20.62L8.29 22.29C8.68 22.68 9.32 22.68 9.71 22.29L11.39 20.61C11.74 20.26 12.3 20.22 12.69 20.52L14.4 21.8C15.06 22.29 16 21.82 16 21V4C16 2.9 16.9 2 18 2H7H6C3 2 2 3.79 2 6V7Z" fill="currentColor"/>
-                    </svg>
-                    Get Started Free
-                  </motion.button>
-                  <button className="px-6 py-4 bg-transparent border border-gray-600 text-white font-medium rounded-xl hover:bg-white/5 transition-colors">
-                    Schedule a Demo
-                  </button>
-                </div>
-                <p className="text-gray-400 text-sm mt-6">No credit card required. Free plan available.</p>
-              </div>
-              <div className="hidden lg:block relative bg-gradient-to-br from-orange-500/20 to-amber-500/20">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative">
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
-                      whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="w-64 h-64 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl p-6 transform"
-                    >
-                      <div className="flex justify-between items-center mb-6">
-                        <div className="text-white font-semibold">Dashboard Preview</div>
-                        <div className="text-orange-400 text-sm">Pro Plan</div>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="h-3 bg-white/10 rounded-full w-full"></div>
-                        <div className="h-3 bg-white/10 rounded-full w-3/4"></div>
-                        <div className="flex gap-2 mt-8">
-                          <div className="h-10 w-10 rounded-lg bg-white/10"></div>
-                          <div className="h-10 w-10 rounded-lg bg-white/10"></div>
-                          <div className="h-10 w-10 rounded-lg bg-white/10"></div>
-                        </div>
-                        <div className="mt-4 h-24 bg-white/10 rounded-lg"></div>
-                      </div>
-                    </motion.div>
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.5, rotate: 10, x: 40, y: -20 }}
-                      whileInView={{ opacity: 1, scale: 1, rotate: 5, x: 60, y: -40 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                      className="absolute top-0 left-0 w-48 h-48 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl p-4"
-                    >
-                      <div className="text-white/80 text-sm font-medium mb-3">Rewards</div>
-                      <div className="flex justify-between items-end">
-                        <div className="text-2xl font-bold text-white">+2.5%</div>
-                        <div className="text-green-400 text-xs">↑ 12%</div>
-                      </div>
-                      <div className="mt-4 h-20 bg-white/10 rounded-lg"></div>
-                    </motion.div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+<ComparisonTable />
+</div>
+</section>
 
-      <Footer />
+{/* FAQ Section */}
+<section className="relative z-10 py-20 bg-black/60 backdrop-blur-md">
+<div className="container mx-auto px-4">
+<motion.div 
+initial={{ opacity: 0 }}
+whileInView={{ opacity: 1 }}
+transition={{ duration: 0.5 }}
+className="text-center mb-16"
+>
+<h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Frequently Asked Questions</h2>
+<p className="text-gray-300 max-w-2xl mx-auto">Everything you need to know about MetaFlux</p>
+</motion.div>
+
+<div className="max-w-3xl mx-auto divide-y divide-gray-800">
+{faqs.map((faq, index) => (
+  <FAQItem 
+    key={index}
+    faq={faq}
+    index={index}
+  />
+))}
+</div>
+</div>
+</section>
+
+{/* CTA Section */}
+<section className="relative z-10 py-20 bg-gradient-to-b from-gray-900/80 to-black/80 backdrop-blur-md overflow-hidden">
+<div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+<div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+
+<div className="container mx-auto px-4 max-w-5xl">
+<motion.div 
+initial={{ opacity: 0, y: 20 }}
+whileInView={{ opacity: 1, y: 0 }}
+transition={{ duration: 0.5 }}
+className="bg-gradient-to-r from-gray-900/90 to-black/90 backdrop-blur-xl border border-gray-800/50 rounded-3xl overflow-hidden shadow-2xl"
+>
+<div className="grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
+  <div className="p-8 md:p-12">
+    <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Ready to Transform Your Expense Management?</h2>
+    <p className="text-gray-300 mb-8">
+      Join thousands of individuals and businesses who trust MetaFlux for their crypto expense tracking, budgeting, and rewards.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-4">
+      <motion.button
+        onClick={connectWallet}
+        disabled={isPending}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+      >
+        {isPending ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Connecting...</span>
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 6V8.42C22 10 21 11 19.42 11H16V4.01C16 2.9 16.91 2 18.02 2C19.11 2.01 20.11 2.45 20.83 3.17C21.55 3.9 22 4.9 22 6Z" fill="currentColor"/>
+              <path d="M2 7V21C2 21.83 2.94 22.3 3.6 21.8L5.31 20.52C5.71 20.22 6.27 20.26 6.63 20.62L8.29 22.29C8.68 22.68 9.32 22.68 9.71 22.29L11.39 20.61C11.74 20.26 12.3 20.22 12.69 20.52L14.4 21.8C15.06 22.29 16 21.82 16 21V4C16 2.9 16.9 2 18 2H7H6C3 2 2 3.79 2 6V7Z" fill="currentColor"/>
+            </svg>
+            <span>{isConnected ? 'Get Started Free' : 'Connect Wallet'}</span>
+          </>
+        )}
+      </motion.button>
+      <button className="px-6 py-4 bg-transparent border border-gray-600 text-white font-medium rounded-xl hover:bg-white/5 transition-colors">
+        Schedule a Demo
+      </button>
     </div>
-  );
+    <p className="text-gray-400 text-sm mt-6">No credit card required. Free plan available.</p>
+  </div>
+  <div className="hidden lg:block relative bg-gradient-to-br from-orange-500/20 to-amber-500/20">
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+          whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-64 h-64 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl p-6 transform"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-white font-semibold">Dashboard Preview</div>
+            <div className="text-orange-400 text-sm">Pro Plan</div>
+          </div>
+          <div className="space-y-4">
+            <div className="h-3 bg-white/10 rounded-full w-full"></div>
+            <div className="h-3 bg-white/10 rounded-full w-3/4"></div>
+            <div className="flex gap-2 mt-8">
+              <div className="h-10 w-10 rounded-lg bg-white/10"></div>
+              <div className="h-10 w-10 rounded-lg bg-white/10"></div>
+              <div className="h-10 w-10 rounded-lg bg-white/10"></div>
+            </div>
+            <div className="mt-4 h-24 bg-white/10 rounded-lg"></div>
+          </div>
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.5, rotate: 10, x: 40, y: -20 }}
+          whileInView={{ opacity: 1, scale: 1, rotate: 5, x: 60, y: -40 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="absolute top-0 left-0 w-48 h-48 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl p-4"
+        >
+          <div className="text-white/80 text-sm font-medium mb-3">Rewards</div>
+          <div className="flex justify-between items-end">
+            <div className="text-2xl font-bold text-white">+2.5%</div>
+            <div className="text-green-400 text-xs">↑ 12%</div>
+          </div>
+          <div className="mt-4 h-20 bg-white/10 rounded-lg"></div>
+        </motion.div>
+      </div>
+    </div>
+  </div>
+</div>
+</motion.div>
+</div>
+</section>
+
+<Footer />
+</div>
+);
 };
 
 export default Home;

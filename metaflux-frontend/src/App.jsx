@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import BudgetControl from './pages/BudgetControl';
 import Rewards from './pages/Rewards';
 import Transactions from './pages/Transactions';
+import { WalletProvider } from './components/providers/wallet-provider';
 
 // import Transactions from './pages/Transactions';
 // import Budgeting from './pages/Budgeting';
@@ -14,6 +15,7 @@ import Transactions from './pages/Transactions';
 
 function App() {
   return (
+  <WalletProvider>
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -27,6 +29,7 @@ function App() {
         <Route path="/settings" element={<Settings />} />   */}
       </Routes>
     </Router>
+    </WalletProvider>
   );
 }
 
