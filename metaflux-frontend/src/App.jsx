@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import BudgetControl from './pages/BudgetControl';
 // import Transactions from './pages/Transactions';
 // import Budgeting from './pages/Budgeting';
 // import Delegation from './pages/Delegation';
@@ -14,7 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
-      
+        <Route path="/Budgeting" element={<BudgetControl />} />
         {/* <Route path="/transactions" element={<Transactions />} />
         <Route path="/budgeting" element={<Budgeting />} />
         <Route path="/delegation" element={<Delegation />} />
