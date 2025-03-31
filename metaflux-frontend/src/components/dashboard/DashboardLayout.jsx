@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -7,6 +7,9 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const userMenuRef = useRef(null);
+  const notificationRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,7 +38,33 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
         read: true
       }
     ]);
-  }, []);
+
+    // Handle scroll effect for header
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    // Handle clicks outside menus to close them
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+
+    // Close sidebar on route change
+    setIsSidebarOpen(false);
+
+    window.addEventListener('scroll', handleScroll);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [location.pathname]);
 
   const handleLogout = () => {
     // Handle logout logic
@@ -103,14 +132,14 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for desktop */}
+      {/* Sidebar for desktop - transitions to a narrower version on medium screens */}
       <motion.aside
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.5 }}
-        className="hidden md:flex flex-col w-64 bg-gray-800/40 backdrop-blur-md border-r border-gray-700/50 z-20"
+        className="hidden md:flex flex-col w-64 lg:w-72 bg-gray-800/40 backdrop-blur-md border-r border-gray-700/50 z-20 flex-shrink-0"
       >
-        <div className="p-4 border-b border-gray-700/50">
+        <div className="p-4 border-b border-gray-700/50 flex items-center">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-transparent bg-clip-text">
               MetaFlux
@@ -118,7 +147,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
           </Link>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto py-4 px-3">
           <nav className="space-y-1">
             {sidebarItems.map((item) => (
               <Link
@@ -132,7 +161,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
                 onClick={() => onTabChange(item.id)}
               >
                 <span className="mr-3">{getIcon(item.icon)}</span>
-                <span>{item.label}</span>
+                <span className="text-sm md:text-base">{item.label}</span>
               </Link>
             ))}
           </nav>
@@ -151,7 +180,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
         </div>
       </motion.aside>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar with improved animation and backdrop */}
       <AnimatePresence>
         {isSidebarOpen && (
           <>
@@ -167,8 +196,8 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-y-0 left-0 w-64 bg-gray-800/90 backdrop-blur-md z-40 md:hidden"
+              transition={{ duration: 0.3, type: "spring", damping: 30 }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-gray-800/90 backdrop-blur-md z-40 md:hidden"
             >
               <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
                 <Link to="/" className="flex items-center">
@@ -178,7 +207,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
                 </Link>
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white p-1"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -187,7 +216,7 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
-                <nav className="space-y-1">
+                <nav className="space-y-2">
                   {sidebarItems.map((item) => (
                     <Link
                       key={item.id}
@@ -226,14 +255,20 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
       </AnimatePresence>
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-y-auto">
-        {/* Header */}
-        <header className="bg-gray-800/40 backdrop-blur-md border-b border-gray-700/50 z-10">
-          <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex flex-col flex-1 overflow-y-auto relative">
+        {/* Header - responsive and has scroll effect */}
+        <header 
+          className={`sticky top-0 z-10 transition-all duration-300 ${
+            isScrolled 
+              ? 'bg-gray-800/80 backdrop-blur-md shadow-lg' 
+              : 'bg-gray-800/40 backdrop-blur-md'
+          } border-b border-gray-700/50`}
+        >
+          <div className="flex h-16 items-center justify-between px-3 sm:px-4 md:px-6">
             <div className="flex items-center">
               {/* Mobile menu button */}
               <button
-                className="md:hidden text-gray-400 hover:text-white focus:outline-none"
+                className="md:hidden text-gray-400 hover:text-white focus:outline-none p-1"
                 onClick={() => setIsSidebarOpen(true)}
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,31 +276,40 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
                 </svg>
               </button>
 
-              {/* Search bar */}
-              <div className="ml-4 md:ml-0 relative">
+              {/* Logo for mobile */}
+              <div className="md:hidden ml-2">
+                <Link to="/" className="flex items-center">
+                  <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-transparent bg-clip-text">
+                    MetaFlux
+                  </span>
+                </Link>
+              </div>
+
+              {/* Search bar - hidden on small screens */}
+              <div className="hidden sm:flex ml-4 md:ml-0 relative">
                 <div className="flex items-center bg-gray-700/30 rounded-lg px-3 py-2">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
                     type="text"
                     placeholder="Search..."
-                    className="ml-2 bg-transparent border-none outline-none focus:ring-0 text-white text-sm w-full md:w-auto"
+                    className="ml-2 bg-transparent border-none outline-none focus:ring-0 text-white text-sm w-28 md:w-auto"
                   />
                 </div>
               </div>
             </div>
 
             {/* Right header elements */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Notifications dropdown */}
-              <div className="relative">
+              <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => {
                     setIsNotificationsOpen(!isNotificationsOpen);
                     setIsUserMenuOpen(false);
                   }}
-                  className="text-gray-300 hover:text-white focus:outline-none relative"
+                  className="text-gray-300 hover:text-white focus:outline-none relative p-1"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -277,76 +321,84 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
                   )}
                 </button>
 
-                {isNotificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-50 border border-gray-700/50">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
-                      <h3 className="text-sm font-semibold text-white">Notifications</h3>
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs text-gray-400 hover:text-white"
-                      >
-                        Mark all as read
-                      </button>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="px-4 py-3 text-center text-gray-400 text-sm">
-                          No notifications
-                        </div>
-                      ) : (
-                        <div>
-                          {notifications.map((notification) => (
-                            <div
-                              key={notification.id}
-                              className={`px-4 py-3 border-b border-gray-700/50 hover:bg-gray-700/30 ${
-                                !notification.read ? 'bg-gray-700/20' : ''
-                              }`}
-                            >
-                              <div className="flex items-start">
-                                <div className="flex-shrink-0 mr-3">
-                                  {notification.type === 'alert' && (
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400">
-                                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                      </svg>
-                                    </span>
-                                  )}
-                                  {notification.type === 'info' && (
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
-                                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                    </span>
-                                  )}
-                                  {notification.type === 'success' && (
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 text-green-400">
-                                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                    </span>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="text-sm text-white">{notification.message}</p>
-                                  <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                <AnimatePresence>
+                  {isNotificationsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-50 border border-gray-700/50 overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
+                        <h3 className="text-sm font-semibold text-white">Notifications</h3>
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs text-gray-400 hover:text-white"
+                        >
+                          Mark all as read
+                        </button>
+                      </div>
+                      <div className="max-h-[60vh] overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-3 text-center text-gray-400 text-sm">
+                            No notifications
+                          </div>
+                        ) : (
+                          <div>
+                            {notifications.map((notification) => (
+                              <div
+                                key={notification.id}
+                                className={`px-4 py-3 border-b border-gray-700/50 hover:bg-gray-700/30 ${
+                                  !notification.read ? 'bg-gray-700/20' : ''
+                                }`}
+                              >
+                                <div className="flex items-start">
+                                  <div className="flex-shrink-0 mr-3">
+                                    {notification.type === 'alert' && (
+                                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                      </span>
+                                    )}
+                                    {notification.type === 'info' && (
+                                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
+                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </span>
+                                    )}
+                                    {notification.type === 'success' && (
+                                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 text-green-400">
+                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-white">{notification.message}</p>
+                                    <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-4 py-2 border-t border-gray-700/50">
-                      <button className="w-full text-center text-sm text-orange-400 hover:text-orange-300">
-                        View all notifications
-                      </button>
-                    </div>
-                  </div>
-                )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-4 py-2 border-t border-gray-700/50">
+                        <button className="w-full text-center text-sm text-orange-400 hover:text-orange-300">
+                          View all notifications
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* User menu */}
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(!isUserMenuOpen);
@@ -354,44 +406,52 @@ const DashboardLayout = ({ children, activeTab, onTabChange }) => {
                   }}
                   className="flex items-center text-gray-300 hover:text-white focus:outline-none"
                 >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-sm md:text-base">
                     A
                   </div>
-                  <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="ml-1 h-4 w-4 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-50 border border-gray-700/50">
-                    <div className="px-4 py-3 border-b border-gray-700/50">
-                      <p className="text-sm text-white font-medium">Alex</p>
-                      <p className="text-xs text-gray-400 mt-1">0x7a23...95b2</p>
-                    </div>
-                    <div className="py-1">
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Your Profile
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Settings
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
-                      >
-                        Disconnect Wallet
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-2rem)] bg-gray-800/90 backdrop-blur-md rounded-lg shadow-lg z-50 border border-gray-700/50 overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-gray-700/50">
+                        <p className="text-sm text-white font-medium">Alex</p>
+                        <p className="text-xs text-gray-400 mt-1">0x7a23...95b2</p>
+                      </div>
+                      <div className="py-1">
+                        <Link
+                          to="/profile"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Your Profile
+                        </Link>
+                        <Link
+                          to="/settings"
+                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Settings
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/30 hover:text-white"
+                        >
+                          Disconnect Wallet
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
