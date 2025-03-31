@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import BudgetControl from './pages/BudgetControl';
+import Rewards from './pages/Rewards';
+import Transactions from './pages/Transactions';
+
 // import Transactions from './pages/Transactions';
 // import Budgeting from './pages/Budgeting';
 // import Delegation from './pages/Delegation';
@@ -16,11 +19,12 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/Budgeting" element={<BudgetControl />} />
-        {/* <Route path="/transactions" element={<Transactions />} />
-        <Route path="/budgeting" element={<Budgeting />} />
+        <Route path="/rewards" element={<Rewards />} />
+         <Route path="/transactions" element={<Transactions />} />
+         {/* <Route path="/budgeting" element={<Budgeting />} />
         <Route path="/delegation" element={<Delegation />} />
         <Route path="/rewards" element={<Rewards />} />
-        <Route path="/settings" element={<Settings />} />  */}
+        <Route path="/settings" element={<Settings />} />   */}
       </Routes>
     </Router>
   );
